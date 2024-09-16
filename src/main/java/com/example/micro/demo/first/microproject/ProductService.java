@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ProductService {
@@ -17,24 +16,29 @@ public class ProductService {
     }
 
     public Product getProductById(String id) {
-        Optional<Product> product = productRepository.findById(id);
-        return product.orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
+        return productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException(id));
     }
 
     public Product createProduct(Product product) {
+        if (productRepository.existsById(product.getId())) {
+            throw new IllegalArgumentException("Product with id " + product.getId() + " already exists.");
+        }
         return productRepository.save(product);
     }
 
-    public Product updateProduct(String id, Product productDetails) {
-        Product product = getProductById(id);
-        product.setName(productDetails.getName());
-        product.setPrice(productDetails.getPrice());
-        product.setDescription(productDetails.getDescription());
+    public Product updateProduct(String id, Product product) {
+        if (!productRepository.existsById(id)) {
+            throw new ProductNotFoundException(id);
+        }
+        product.setId(id);
         return productRepository.save(product);
     }
 
     public void deleteProduct(String id) {
-        Product product = getProductById(id);
-        productRepository.delete(product);
+        if (!productRepository.existsById(id)) {
+            throw new ProductNotFoundException(id);
+        }
+        productRepository.deleteById(id);
     }
 }
